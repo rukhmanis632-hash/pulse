@@ -16,21 +16,24 @@ rm -rf build android/assets
 mkdir -p build/gen build/classes build/dex android/assets
 cp pulse.html android/assets/pulse.html
 
-# 1. compile resources
+# 1. compile resources -> flat files
 "${BT}aapt2" compile --dir android/res -o build/res.zip
+mkdir -p build/flat
+(cd build/flat && unzip -q ../res.zip)
 
 # 2. link resources + manifest + assets -> base.apk and generated R.java
+#    (flat files are passed positionally; -R is only for overlays)
 "${BT}aapt2" link \
   -o build/base.apk \
   -I "$JAR" \
   --manifest android/AndroidManifest.xml \
-  -R build/res.zip \
   --java build/gen \
   -A android/assets \
   --min-sdk-version 21 \
   --target-sdk-version 34 \
   --version-code 1 \
-  --version-name 1.0
+  --version-name 1.0 \
+  $(find build/flat -name '*.flat')
 
 # 3. compile java
 javac -source 8 -target 8 -nowarn -classpath "$JAR" -d build/classes \
